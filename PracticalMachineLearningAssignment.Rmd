@@ -1,0 +1,68 @@
+---
+output: word_document
+---
+```{r load libraries, cache=FALSE, echo=FALSE, message = FALSE, warning=FALSE}
+
+library(Rmisc);library(ggplot2);library(dplyr);library(YaleToolkit);library(caret);library(doParallel)
+
+```
+
+---
+title: "On the prediction of exercise style based on quantified self movement devices"
+author: "John Snell"
+date: "19 January 2016"
+output: word_document
+bibliography: assignmentbiblio.bib
+---
+
+#Executive Summary
+This report examines the use of machine learning to predict the quality of a specific physical exercise - the .
+The raw data consists of input from sensors postioned at four physical points - the forearm, the upper arm, the belt, and the dumbbell itself.
+The data was collected at a rate of ... The data provided consisted of a training set (19622 records) of 160 variables including the activity classificaion of either acceptable exercise (A) or 4 modes of incorrect exercise (B:E) as a training set of data, and a testing set (20 records) also containg 160 variables except the classification variable was replaces in this set woth a record id variable ranging 1:20. 
+For this report, the training datasert was partionined into a true trainings set (13737 records), and a validation set (5885 records). The training was performed using random trees as the modelling algorithm. Predictions were made on the validation with the confusion matrix based on the predictions showed an accuracy of xxxx. As a resut this moelld was usd to predict the outcomes of the 20 test records. These predictions were correct for xxx of the 20 records.
+
+
+
+#Introduction
+The data for this assignment was 
+
+[@vellosoetal2013]
+
+``` {r read data, cache = TRUE, echo=FALSE}
+setwd("~/RStudio/Practical Machine Learning/Assignment")
+tr<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+tst<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+
+```
+
+```{r clean up datasets,cache= TRUE}
+whatis(tr)
+whatis(tst)
+tr1<-tr[c(8:11,37:49,60:68,84:86,102,113:124,140,151:160)]
+testassignment<-tst[c(8:11,37:49,60:68,84:86,102,113:124,140,151:159)]
+whatis(tr1)
+whatis(testassignment)
+```
+
+
+```{r organise,cache= TRUE}
+#need to break up training data into a training and a testing set
+trainIndex = createDataPartition(tr1$classe, p = 0.70,list=FALSE)
+training = tr1[trainIndex,]
+testing = tr1[-trainIndex,]
+dim (training);dim(testing)
+
+```
+
+
+```{r train, cache= TRUE}
+#library(doParallel)
+#registerDoParallel(cores = 3)
+#mod1<-train(classe~.,data=training,method = "rf",prox=T)
+#pr1<-predict(mod1,newdata=training)
+#confusionMatrix(pr1,training)
+#pr2<-predict(mod1,newdata = testassignment)
+#pr2
+```
+
+#Appendix
