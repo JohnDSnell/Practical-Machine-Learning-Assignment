@@ -1,0 +1,7 @@
+Model,Training,Replacement,Records,Time,Errors,OOSE,Accuracy,Test,Probability
+1,random forest (rf),boost/25,13081,5122,48,0.0073,0.9927,20,0.86
+2,random forest (rf),cv/10,13081,1833,44,0.0067,0.9933,20,0.87
+3,random forest (rf),cv/10,6542,437,82,0.0125,0.9875,20,0.78
+4,random forest (rf),cv/10,3271,140,202,0.0309,0.9691,18,0.53
+5,generalized boosting (gbm),cv/10,6542,103,282,0.0431,0.9569,19,0.41
+6,generalized boosting (gbm),cv/10,13081,199,230,0.0352,0.9648,20,0.49

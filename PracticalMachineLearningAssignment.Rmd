@@ -1,32 +1,18 @@
 ---
-output: word_document
+title: An investation of the modelling required to predict exercise style based on
+  data from quantified self movement devices
+author: "John Snell"
+date: "19 January 2016"
+output: html_document
+bibliography: assignmentbiblio.bib
 ---
 ```{r load libraries, cache=FALSE, echo=FALSE, message = FALSE, warning=FALSE}
-
-library(Rmisc);library(ggplot2);library(dplyr);library(YaleToolkit);library(caret);library(doParallel)
+library(Rmisc);library(ggplot2);library(dplyr);library(YaleToolkit);library(caret);library(doParallel);library(knitr)
 
 ```
 
----
-title: "On the prediction of exercise style based on quantified self movement devices"
-author: "John Snell"
-date: "19 January 2016"
-output: word_document
-bibliography: assignmentbiblio.bib
----
-
-#Executive Summary
-This report examines the use of machine learning to predict the quality of a specific physical exercise - the .
-The raw data consists of input from sensors postioned at four physical points - the forearm, the upper arm, the belt, and the dumbbell itself.
-The data was collected at a rate of ... The data provided consisted of a training set (19622 records) of 160 variables including the activity classificaion of either acceptable exercise (A) or 4 modes of incorrect exercise (B:E) as a training set of data, and a testing set (20 records) also containg 160 variables except the classification variable was replaces in this set woth a record id variable ranging 1:20. 
-For this report, the training datasert was partionined into a true trainings set (13737 records), and a validation set (5885 records). The training was performed using random trees as the modelling algorithm. Predictions were made on the validation with the confusion matrix based on the predictions showed an accuracy of xxxx. As a resut this moelld was usd to predict the outcomes of the 20 test records. These predictions were correct for xxx of the 20 records.
-
-
-
-#Introduction
-The data for this assignment was 
-
-[@vellosoetal2013]
+##Executive Summary
+This report examines the use of machine learning to predict the quality of a specific physical exercise - the performance of barbell lifts both correctly and incorrectly in 5 different ways. The raw data consists of input from sensors positioned at four physical points - the forearm, the upper arm, the belt, and the barbell itself, for 6 test candidates. The data provided consisted of a training set (19622 records) of 160 variables including the activity classification of either acceptable exercise (A) or 4 modes of incorrect exercise (B:E) as a training set of data, and a testing set (20 records) also containing 160 variables except the classification variable was replaced in this set with a record id variable ranging 1:20. For this report, the training dataset was partitioned into a true training set (13081 records), and a validation set (6541 records). The training was performed using random trees as the modelling algorithm with boosting over 25 resamples as the basis for cross validation. Predictions were made on the validation with the confusion matrix based on the predictions showing an accuracy of 99.72% and out of sample error rate of 48 in 6541 validation record (0.73%). As a result, this model was used to predict the outcomes of the 20 test records. These predictions were correct for all 20 of the records in the formal testing dataset.
 
 ``` {r read data, cache = TRUE, echo=FALSE}
 setwd("~/RStudio/Practical Machine Learning/Assignment")
@@ -35,34 +21,114 @@ tst<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.c
 
 ```
 
-```{r clean up datasets,cache= TRUE}
-whatis(tr)
-whatis(tst)
+##Introduction
+The data for this assignment was originated by @vellosoetal2013 as part of their research working into using machine learning in order to determine and provide feedback to participants regarding the quality of a physical activity in which they are involved. The data was actually downloaded using [training data]https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv and [testing data] https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+
+
+###Cleaning the dataset
+Exploration of the testing dataset shows a large number of the variables in this dataset are of no significance in building a prediction model because either they are empty in the test set so cannot be used to classify the test records or are providing descriptive information such as the names of the participants performing the activity. As there is no intent at this stage to try and personalise the training such information provides no value in a predictive sense. All of these variables were discounted and only those variables that were actual measurements as made by the sensors were retained. This reduced the dataset from 160 to 53 variables. (See Table 2).
+The training dataset is large (19622 records) and was divided into a true training set consisting of two thirds of the records, with the other third being put into a validation set to allow the modelled parameters to be cross validated and the out of sample error and hence accuracy of the model fit to be determined.
+
+
+
+###Construction of Model
+As the datasets require the prediction of a categorical with 5 levels (the *classe* variable) two modelling methods were employed: the random forest modelling method which has many advantages as detailed by @Walker2013:
+
+* Accuracy
+* Runs efficiently on large data bases
+* Handles thousands of input variables without variable deletion
+* Gives estimates of what variables are important in the classification
+* Generates an internal unbiased estimate of the generalization error as the forest building progresses
+* Provides effective methods for estimating missing data
+* Maintains accuracy when a large proportion of the data are missing
+* Provides methods for balancing error in class population unbalanced data sets
+* Generated forests can be saved for future use on other data
+* Prototypes are computed that give information about the relation between the variables and the classification.
+* Computes proximities between pairs of cases that can be used in clustering, locating outliers, or (by scaling) give interesting views of the data
+* Capabilities of the above can be extended to unlabelled data, leading to unsupervised clustering, data views and outlier detection
+* Offers an experimental method for detecting variable interactions.
+
+and the generalized boosting method. The latter was chosen as a potential alternative as random forests can be computationally intensive.
+The notable cons of the random forest technique are:
+
+* Speed - especially with such a large training set - model 1 took 5122 seconds to complete using 3 cores of a 4 core Intel I7 processor
+* Tendency to overfit
+
+Six models were constructed as part of this investigation on the basis of examining the impact of different modelling methods, different resampling techniques, and different numbers of records used to train the models.
+
+
+###Cross Validation
+Two models were specifically constructed only differing in the nature of the resampling used - Model 1 and Model 2 (see table 1). For Model 1, the default cross validation algorithm of 25 iterations of bootstrapping was used. For the second model, a 10-fold cross validation was used. The fit which provided the highest accuracy would be used to classify the test dataset.
+
+###Out of Sample Error
+Table 1 shows the error statistics for each model as determined from the confusion matrix against the validation set.
+For Model 1 (resampling using boosting over 25 resamples) the algorithm failed to classify correctly a total of 48 records out of 6541 records in the validation set. This is an out of sample error of 0.73%.
+
+###Prediction
+Each model was tested agains the 20 record testing dataset to see how many records could be coorectly classified on the A-E scale.
+
+###Results
+```{r results,echo=FALSE}
+results<-read.csv("Results.csv")
+
+kable(results,caption = "Table 1: Results obtained from using 6 different models to predict outcomes from a test dataset")
+```
+
+####Explanation of columns in results table
+
+* Training: 	The regression technique used to train the model
+* Replacement: 	The replacement technique used to cross validate the process
+* Records:	Number of records used to train the model
+* Time: 	The time in seconds required to train the model using 3 cores of a 4 core Intel I7 processor
+* Errors:	The number of records incorrectly classified in the validation set
+* OOSE:	Out of Sample Error estimate
+* Test:	Number of test records correctly identified
+* Probability:	The probability of classifying all 20 test records correctly
+
+
+
+###Conclusions
+It can be seen from the results table that all of the models correctly classify 18 or greater records out of the 20 in the test dataset. However, there is a considerable variation in time taken to train the different models. It can be clearly seen that the *brute force* approach of Model 1 which consumed well over 1 hour of machine time is clearly not justified relative to Model 2 which took one third of the time to train. It is interesting that the halving of training records for the random forests regression method as in Model 3 significantly reduced the training the time (about one quarter of the time for Model 2) with no significant impact on the overall accuracy of the prediction of the validation dataset and no difference in predictions of the test set.
+The change of model from the random forest to the generalized boosting significantly reduced the training time but with some loss of overall accuracy on the validation dataset but with little overall effect on the ability of these models to correctly predict test data set.
+
+```{r clean up datasets,cache= TRUE,echo=FALSE}
+tr1<-tr[c(8:11,37:49,60:68,84:86,102,113:124,140,151:160)]
+testassignment<-tst[c(8:11,37:49,60:68,84:86,102,113:124,140,151:159)]
+#whatis(tr1)
+#whatis(testassignment)
+```
+
+
+```{r organise,cache= TRUE,echo=FALSE}
+#need to break up training data into a training and a testing set
+
+folds<-createFolds(tr1$classe,k=3)
+str(folds)
+trIndex=c(folds$Fold1,folds$Fold2)
+training1<-tr1[trIndex,]
+testing1<-tr1[-trIndex,]
+```
+
+
+
+##Appendices
+###Appendix A Figures
+
+###Appendix B Tables
+```{r tables,echo=FALSE}
+library(knitr)
+kable(whatis(tr1),caption = "Table 2: An examination of the variables in the training dataset")
+```
+
+```{r}
+
+```
+###Appendix C Code
+```{r,cache= TRUE,echo=TRUE,eval=FALSE}
 tr1<-tr[c(8:11,37:49,60:68,84:86,102,113:124,140,151:160)]
 testassignment<-tst[c(8:11,37:49,60:68,84:86,102,113:124,140,151:159)]
 whatis(tr1)
 whatis(testassignment)
 ```
-
-
-```{r organise,cache= TRUE}
-#need to break up training data into a training and a testing set
-trainIndex = createDataPartition(tr1$classe, p = 0.70,list=FALSE)
-training = tr1[trainIndex,]
-testing = tr1[-trainIndex,]
-dim (training);dim(testing)
-
-```
-
-
-```{r train, cache= TRUE}
-#library(doParallel)
-#registerDoParallel(cores = 3)
-#mod1<-train(classe~.,data=training,method = "rf",prox=T)
-#pr1<-predict(mod1,newdata=training)
-#confusionMatrix(pr1,training)
-#pr2<-predict(mod1,newdata = testassignment)
-#pr2
-```
-
-#Appendix
+###Bibliography
