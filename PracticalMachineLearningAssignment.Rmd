@@ -1,9 +1,12 @@
 ---
-title: An investation of the modelling required to predict exercise style based on
-  data from quantified self movement devices
+title: An investigation into the modelling required to predict quality of exercise
+  style based on data from quantified self movement devices.
 author: "John Snell"
 date: "19 January 2016"
-output: html_document
+output:
+  word_document: default
+  html_document:
+    fig_caption: yes
 bibliography: assignmentbiblio.bib
 ---
 ```{r load libraries, cache=FALSE, echo=FALSE, message = FALSE, warning=FALSE}
@@ -12,7 +15,7 @@ library(Rmisc);library(ggplot2);library(dplyr);library(YaleToolkit);library(care
 ```
 
 ##Executive Summary
-This report examines the use of machine learning to predict the quality of a specific physical exercise - the performance of barbell lifts both correctly and incorrectly in 5 different ways. The raw data consists of input from sensors positioned at four physical points - the forearm, the upper arm, the belt, and the barbell itself, for 6 test candidates. The data provided consisted of a training set (19622 records) of 160 variables including the activity classification of either acceptable exercise (A) or 4 modes of incorrect exercise (B:E) as a training set of data, and a testing set (20 records) also containing 160 variables except the classification variable was replaced in this set with a record id variable ranging 1:20. For this report, the training dataset was partitioned into a true training set (13081 records), and a validation set (6541 records). The training was performed using random trees as the modelling algorithm with boosting over 25 resamples as the basis for cross validation. Predictions were made on the validation with the confusion matrix based on the predictions showing an accuracy of 99.72% and out of sample error rate of 48 in 6541 validation record (0.73%). As a result, this model was used to predict the outcomes of the 20 test records. These predictions were correct for all 20 of the records in the formal testing dataset.
+This report examines the use of machine learning to predict the quality of a specific physical exercise - the performance of dumbbell lifts both (a) correctly and (b) incorrectly in 4 different ways. The raw data consists of input from sensors positioned at four key points - the forearm, the upper arm, the belt, and the barbell itself, for 6 test candidates. The data provided consisted of a training set (19622 records) of 160 variables including the activity classification of either acceptable exercise (A) or 4 modes of incorrect exercise (B:E) as a training set of data, and a testing set (20 records) also containing 160 variables except the classification variable was replaced in this set with a record id variable ranging 1:20. For this report, the training dataset was partitioned into a true training set (13081 records), and a validation set (6541 records). The training was performed using both random trees and gerenalised boosted regression as the modelling algorithms with boosting over 25 resamples and cross validation across 10 folds as the basis for the replacement algorithms. A total of 6 models were constructed. Predictions were made on the validation dataset for each model and confusion matrices derived, based on these predictions. The most accurate model was Model 2 showing an accuracy of 99.76% and out of sample error rate of 16 errors out of 6541 validation records (0.24%). As a result, this model was used to predict the outcomes of the 20 test records. These predictions were verified as correct for all 20 of the records in the formal testing dataset.
 
 ``` {r read data, cache = TRUE, echo=FALSE}
 setwd("~/RStudio/Practical Machine Learning/Assignment")
@@ -22,18 +25,41 @@ tst<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.c
 ```
 
 ##Introduction
-The data for this assignment was originated by @vellosoetal2013 as part of their research working into using machine learning in order to determine and provide feedback to participants regarding the quality of a physical activity in which they are involved. The data was actually downloaded using [training data]https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv and [testing data] https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+The data for this assignment was originated by @vellosoetal2013 as part of their research working into using machine learning in order to determine and provide feedback to participants regarding the quality of a physical activity in which they are involved. The data was downloaded from their web site using [training data]  https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv and [testing data]  https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv.
 
+The activity defined for their research was one set of 10 repetitions of the Unilateral Dumbell Biceps Curl. Essentially the dataset is looking at the dynamics of 4 interconnected points (forearm, arm, belt, and dumbell) in space as the 6 participants work through each exercise mode: A - correcly, B - throwing the elbows to the front, C - lifting the dumbbbell only halfway ,D - lowering the dumbbell only halfway, and E - throwing the hips forward.
+We can consider the dynamics of the activities through the perspective of roll, pitch, and yaw which define the three rotational modes for any object in a 3D space. A change in any one of these rotational modes is experienced by the other 2 modes in a highly non-linear way. There is by necessity physical couplings between the arm, forearm, belt, and dumbbell. These couplings also have their own degrees of freedom which considerably exacerbates the overall non-linearity built into this system. 
 
 
 ###Cleaning the dataset
 Exploration of the testing dataset shows a large number of the variables in this dataset are of no significance in building a prediction model because either they are empty in the test set so cannot be used to classify the test records or are providing descriptive information such as the names of the participants performing the activity. As there is no intent at this stage to try and personalise the training such information provides no value in a predictive sense. All of these variables were discounted and only those variables that were actual measurements as made by the sensors were retained. This reduced the dataset from 160 to 53 variables. (See Table 2).
 The training dataset is large (19622 records) and was divided into a true training set consisting of two thirds of the records, with the other third being put into a validation set to allow the modelled parameters to be cross validated and the out of sample error and hence accuracy of the model fit to be determined.
 
+```{r clean up datasets,cache= TRUE,echo=FALSE}
+tr1<-tr[c(8:11,37:49,60:68,84:86,102,113:124,140,151:160)]
+testassignment<-tst[c(8:11,37:49,60:68,84:86,102,113:124,140,151:159)]
+#whatis(tr1)
+#whatis(testassignment)
+```
 
+###Exploratory Analysis of Dataset
+In this intial explorations we intially isolated the roll, pitch and yaw for each sensor and performed preliminary plots on all 19622 records contained in the training dataset - see Figures 1 & 2. The plots of these variables against each other show distinct complex non-linear patterns of interactions indicating that a technique such as random forests should be used to train the detection system.
+Finally one of the rotational modes - *roll* - was chosen to see if any patterns could be determined when examining this mode across all four sensors - See Figure 3. Once again there are hints of behavioural patterns being expressed but the noise in the data makes it difficult to discern them by eye.
+
+```{r explore,echo=FALSE}
+plotset1<-subset(tr1,select=c(roll_belt,roll_arm,roll_forearm,roll_dumbbell,classe))
+plotset2<-subset(tr1,select=c(pitch_belt,pitch_arm,pitch_forearm,pitch_dumbbell,classe))
+plotset3<-subset(tr1,select=c(yaw_belt,yaw_arm,yaw_forearm,yaw_dumbbell,classe))
+
+
+plotset4<-subset(tr1,select=c(roll_belt,pitch_belt,yaw_belt,classe))
+plotset5<-subset(tr1,select=c(roll_arm,pitch_arm,yaw_arm,classe))
+plotset6<-subset(tr1,select=c(roll_forearm,pitch_forearm,yaw_forearm,classe))
+plotset7<-subset(tr1,select=c(roll_dumbbell,pitch_dumbbell,yaw_dumbbell,classe))
+```
 
 ###Construction of Model
-As the datasets require the prediction of a categorical with 5 levels (the *classe* variable) two modelling methods were employed: the random forest modelling method which has many advantages as detailed by @Walker2013:
+As the datasets require the prediction of a factor variable with 5 levels (the *classe* variable) of a highly compex and interactive system with considerable noise, two modelling methods were employed: (a) the random forest modelling method which has many advantages as detailed by @Walker2013:
 
 * Accuracy
 * Runs efficiently on large data bases
@@ -49,7 +75,7 @@ As the datasets require the prediction of a categorical with 5 levels (the *clas
 * Capabilities of the above can be extended to unlabelled data, leading to unsupervised clustering, data views and outlier detection
 * Offers an experimental method for detecting variable interactions.
 
-and the generalized boosting method. The latter was chosen as a potential alternative as random forests can be computationally intensive.
+and (b) the generalized boosting method. The latter was chosen as a potential alternative to random forests which are computationally intensive.
 The notable cons of the random forest technique are:
 
 * Speed - especially with such a large training set - model 1 took 5122 seconds to complete using 3 cores of a 4 core Intel I7 processor
@@ -59,14 +85,19 @@ Six models were constructed as part of this investigation on the basis of examin
 
 
 ###Cross Validation
-Two models were specifically constructed only differing in the nature of the resampling used - Model 1 and Model 2 (see table 1). For Model 1, the default cross validation algorithm of 25 iterations of bootstrapping was used. For the second model, a 10-fold cross validation was used. The fit which provided the highest accuracy would be used to classify the test dataset.
+Cross validation was specifically adressed by dividing the original training dataset into two parts, a formal training set and a validation set which was used to determine the accuracy and out of sample error for each of the models constructed.
+
+Two models were specifically constructed which only differed in the nature of the resampling used - Model 1 and Model 2 (see Table 1). For Model 1, the default resampling algorithm of 25 iterations of bootstrapping was used. For the second model, a 10-fold cross validation resampling was used. The fit which provided the highest accuracy was used to classify the test dataset.
 
 ###Out of Sample Error
 Table 1 shows the error statistics for each model as determined from the confusion matrix against the validation set.
-For Model 1 (resampling using boosting over 25 resamples) the algorithm failed to classify correctly a total of 48 records out of 6541 records in the validation set. This is an out of sample error of 0.73%.
+For Model 1 (resampling using boosting over 25 resamples) the algorithm failed to classify correctly a total of 17 records out of 6541 records in the validation set. This is an out of sample error of 0.26%.
 
 ###Prediction
-Each model was tested agains the 20 record testing dataset to see how many records could be coorectly classified on the A-E scale.
+Each model was tested agains the 20 record testing dataset to see how many records could be correctly classified on the A-E scale. The results are available in Table 1.
+The output from the most accurate model (Model 2) was used to verify the results of the test set against the course quiz.
+Each model test output was then verified agins the output from Model 2.
+
 
 ###Results
 ```{r results,echo=FALSE}
@@ -89,46 +120,238 @@ kable(results,caption = "Table 1: Results obtained from using 6 different models
 
 
 ###Conclusions
-It can be seen from the results table that all of the models correctly classify 18 or greater records out of the 20 in the test dataset. However, there is a considerable variation in time taken to train the different models. It can be clearly seen that the *brute force* approach of Model 1 which consumed well over 1 hour of machine time is clearly not justified relative to Model 2 which took one third of the time to train. It is interesting that the halving of training records for the random forests regression method as in Model 3 significantly reduced the training the time (about one quarter of the time for Model 2) with no significant impact on the overall accuracy of the prediction of the validation dataset and no difference in predictions of the test set.
-The change of model from the random forest to the generalized boosting significantly reduced the training time but with some loss of overall accuracy on the validation dataset but with little overall effect on the ability of these models to correctly predict test data set.
+It can be seen from the results table that all of the models correctly classify 18 or greater records out of the 20 in the test dataset. However, there is a considerable variation in time taken to train the different models. It can be clearly seen that the *brute force* approach of Model 1 which consumed well over one and a half hours of machine time is clearly not justified relative to Model 2 which took one third of the time to train. It is interesting that halving the number of training records for the random forests regression method as in Model 3 significantly reduced the training time (about one quarter of the time for Model 2) with no significant impact on the overall accuracy of the prediction of the validation dataset and no difference in the predictions for the test set.
+The change of model from the random forest to the generalized boosting significantly reduced the training time but with some loss of overall accuracy on the validation dataset. However, there was little overall degradation on the ability of these gbm models to correctly predict the test dataset. Note that Model 6 correctly evaluated all 20 records in the test set despite there being only  48% chance of it actually being able to do so.
 
-```{r clean up datasets,cache= TRUE,echo=FALSE}
-tr1<-tr[c(8:11,37:49,60:68,84:86,102,113:124,140,151:160)]
-testassignment<-tst[c(8:11,37:49,60:68,84:86,102,113:124,140,151:159)]
-#whatis(tr1)
-#whatis(testassignment)
-```
 
 
 ```{r organise,cache= TRUE,echo=FALSE}
 #need to break up training data into a training and a testing set
 
 folds<-createFolds(tr1$classe,k=3)
-str(folds)
 trIndex=c(folds$Fold1,folds$Fold2)
 training1<-tr1[trIndex,]
 testing1<-tr1[-trIndex,]
 ```
 
 
-
 ##Appendices
 ###Appendix A Figures
+```{r explore_1,echo=FALSE,fig.cap="Figure 1: Detecting patterns in the roll, pitch, and yaw of the belt sensor"}
+plot(plotset4,col=plotset1$classe)
+```
+
+```{r explore_2,echo = FALSE,fig.cap="Figure 2: Detecting patterns in the roll, pitch, and yaw of the forearm sensor"}
+plot(plotset6,col=plotset2$classe)
+```
+
+```{r explore_3`,echo = FALSE,fig.cap="Figure 3: Detecting patterns in the roll for the sensors in each of the 4 positions"}
+plot(plotset1,col=plotset2$classe)
+```
 
 ###Appendix B Tables
 ```{r tables,echo=FALSE}
 library(knitr)
-kable(whatis(tr1),caption = "Table 2: An examination of the variables in the training dataset")
+kable(whatis(tr1),caption = "Table 2: An examination of the variables in the cleaned training dataset")
 ```
 
-```{r}
 
-```
 ###Appendix C Code
 ```{r,cache= TRUE,echo=TRUE,eval=FALSE}
+#read data
+setwd("~/RStudio/Practical Machine Learning/Assignment")
+tr<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+tst<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+
+#extract variables to use for training and testing
 tr1<-tr[c(8:11,37:49,60:68,84:86,102,113:124,140,151:160)]
 testassignment<-tst[c(8:11,37:49,60:68,84:86,102,113:124,140,151:159)]
+
+#examine variables in training and test datsets
 whatis(tr1)
 whatis(testassignment)
+
+#construct some exploratory plots to look at dependency patterns of some variables
+```{r,echo=FALSE,eval=FALSE}
+plotset1<-subset(tr1,select=c(roll_belt,roll_arm,roll_forearm,roll_dumbbell,classe))
+plotset2<-subset(tr1,select=c(pitch_belt,pitch_arm,pitch_forearm,pitch_dumbbell,classe))
+plotset3<-subset(tr1,select=c(yaw_belt,yaw_arm,yaw_forearm,yaw_dumbbell,classe))
+plotset4<-subset(tr1,select=c(roll_belt,pitch_belt,yaw_belt,classe))
+plotset5<-subset(tr1,select=c(roll_arm,pitch_arm,yaw_arm,classe))
+plotset6<-subset(tr1,select=c(roll_forearm,pitch_forearm,yaw_forearm,classe))
+plotset7<-subset(tr1,select=c(roll_dumbbell,pitch_dumbbell,yaw_dumbbell,classe))
+
+plot(plotset1,col=plotset1$classe)
+plot(plotset6,col=plotset6$classe)
+
+#Split up training data into trainings and vaidation sets by performing q 3 fld split
+#of the original dataset
 ```
+
+
+```{r,cache= TRUE,echo=TRUE,eval=FALSE}
+#Construct model1
+library(doParallel)
+registerDoParallel(cores = 3)
+set.seed(3454)
+
+##use this code to build the intial model
+#build a model fit using the random trees method and the boost/25 times 
+#technique for resampling the data
+#saving the model once it has been built
+
+# system.time(mod1<-train(classe~.,data=training1,method = "rf", prox=T))
+# saveRDS(mod1,file="model1.rds")
+
+#Use this code if model was previously built so read it in from file
+mod1<-readRDS("model1.rds")
+
+#predict the values of classe that should be established for the testing dataset
+#check the prediction against the validation data by deriving the confusion matrix
+
+```
+
+```{r,cache= TRUE,echo=TRUE,eval=FALSE}
+#Construct model2
+#to check on the resampling algorithm, build a new model fit using a 
+#10 fold cross validations technique for resampling the data.
+#saving the model once it has been built.
+
+mod2<-readRDS("model2.rds")
+#trC<-trainControl("cv",10)
+#set.seed(3454)
+#system.time(mod2<-train(classe~.,data=training1,method = "rf", trControl=trC, prox=T))
+# saveRDS(mod2,file="model2.rds")
+
+```
+
+```{r,cache= TRUE,echo=TRUE,eval=FALSE}
+#Construct model3
+
+#to determine the impact of sample size repeat model 2 but using 
+#only half of the records in the training set, 
+#the validation set remains the same.
+mod3<-readRDS("model3.rds")
+#trC<-trainControl("cv",10)
+#training3<-tr1[folds$Fold1,]
+#set.seed(3454)
+#system.time(mod3<-train(classe~.,data=training3, method = "rf", trControl=trC, prox=T))
+#saveRDS(mod3,file="model3.rds")
+
+```
+
+```{r,cache= TRUE,echo=TRUE,eval=FALSE}
+#Construct model4
+
+temp<-tr1[folds$Fold1,]
+subfolds<-createFolds(temp$classe,k=2)
+training4<-temp[subfolds$Fold1,]
+mod4<-readRDS("model4.rds")
+#trC<-trainControl("cv",10)
+#set.seed(3454)
+#system.time(mod4<-train(classe~.,data=training4, method = "rf", trControl=trC, prox=T))
+#saveRDS(mod4,file="model4.rds")
+
+```
+
+```{r,cache= TRUE,echo=TRUE,eval=FALSE}
+#Construct model5
+#using a different modelling method - generalized boosted regression
+trC<-trainControl("cv",10)
+set.seed(3454)
+system.time(mod5<-train(classe~.,data=tr1[folds$Fold1,], method = "gbm", trControl=trC))
+saveRDS(mod5,file="model5.rds")
+```
+
+```{r,cache= TRUE,echo=TRUE,eval=FALSE}
+#Construct model6
+
+#using a different modelling method - generalized boosted regression on a larger training set
+trC<-trainControl("cv",10)
+set.seed(3454)
+system.time(mod6<-train(classe~.,data=training1, method = "gbm", trControl=trC))
+saveRDS(mod6,file="model6.rds")
+```
+
+```{r,cache= TRUE,echo=TRUE,eval=FALSE}
+#Validate models
+pr1<-predict(mod1,newdata=testing1)
+cf1<-confusionMatrix(pr1,testing1$classe)
+#print out the confusion matriX for this model fit.
+cf1
+
+#use the model fit to determine the classe for each record of the test set
+prassign1<-predict(mod1,newdata = testassignment)
+prassign1
+
+pr2<-predict(mod2,newdata=testing1)
+cf2<-confusionMatrix(pr2,testing1$classe)
+cf2
+
+prassign2<-predict(mod2,newdata = testassignment)
+prassign2
+
+pr3<-predict(mod3,newdata=testing1)
+cf3<-confusionMatrix(pr3,testing1$classe)
+cf3
+prassign3<-predict(mod3,newdata = testassignment)
+prassign3
+
+pr4<-predict(mod4,newdata=testing1)
+cf4<-confusionMatrix(pr4,testing1$classe)
+cf4
+prassign4<-predict(mod4,newdata = testassignment)
+prassign4
+
+pr5<-predict(mod5,newdata=testing1)
+cf5<-confusionMatrix(pr5,testing1$classe)
+cf5
+
+prassign5<-predict(mod5,newdata = testassignment)
+prassign5
+
+pr6<-predict(mod6,newdata=testing1)
+cf6<-confusionMatrix(pr6,testing1$classe)
+cf6
+
+prassign6<-predict(mod6,newdata = testassignment)
+prassign6
+
+#Verify accuracy of models 1,3,4,5,6 against Model 2
+mod1result<-prassign1==prassign2
+mod3result<-prassign3==prassign2
+mod4result<-prassign4==prassign2
+mod5result<-prassign5==prassign2
+mod6result<-prassign6==prassign2
+```
+
+
+```{r,cache= TRUE,echo=TRUE,eval=FALSE}
+#build results table and store on disk
+results<-matrix(NA,nrow=6,ncol=10)
+results[,1]<-c(1,"random forest (rf)","boost 25", dim(training1)[1],5122,48,1-cf1$overall[1],cf1$overall[1],sum(mod1result),cf1$overall[1]^20)
+
+Model<-1:6
+Training<-c(rep('random forest (rf)',4),rep('cv/10',2))
+Replacement<-c('boost/25',rep('cv/10',5))
+Records<-c(rep(dim(training1)[1],2),dim(training3)[1],dim(training4)[1],dim(training3)[1],dim(training1)[1])
+Time<-c(5122,1833,437,140,103,199)
+Errors<-c(calculatValidationErrors(cf1),calculatValidationErrors(cf2),calculatValidationErrors(cf3),calculatValidationErrors(cf4),calculatValidationErrors(cf5),calculatValidationErrors(cf6))
+OOSE<-c(1-cf1$overall[1],1-cf2$overall[1],1-cf3$overall[1],1-cf4$overall[1],1-cf5$overall[1],1-cf6$overall[1])
+Accuracy<-c(cf1$overall[1],cf2$overall[1],cf3$overall[1],cf4$overall[1],cf5$overall[1],cf6$overall[1])
+Test<-c(sum(mod1result),20,sum(mod3result),sum(mod4result),sum(mod5result),sum(mod6result))
+Probability<-c(cf1$overall[1]^20,cf2$overall[1]^20,cf3$overall[1]^20,cf4$overall[1]^20,cf5$overall[1]^20,cf6$overall[1]^20)
+results<-data.frame(Model,Training,Replacement,Records,Time,Errors,OOSE,Accuracy,Test,Probability)
+write.csv(results,"Results.csv")
+
+#function to calculate the total number of validation errors derived from the confusion matrix or each model
+#parameter cf is the confusion matrix of the model being assessed
+calculatValidationErrors<-function (cf){
+  errors<-sum(sum(cf$table[,1])-cf$table[1,1],sum(cf$table[,2])-cf$table[2,2],sum(cf$table[,3])-cf$table[3,3],sum(cf$table[,4])-cf$table[4,4],sum(cf$table[,5])-cf$table[5,5])
+  return(errors)
+}
+
+```
+
+
 ###Bibliography
