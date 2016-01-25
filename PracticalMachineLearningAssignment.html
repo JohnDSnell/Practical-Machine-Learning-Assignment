@@ -150,10 +150,10 @@ img {
 <td align="right">13082</td>
 <td align="right">5122</td>
 <td align="right">17</td>
-<td align="right">0.0025998</td>
-<td align="right">0.9974002</td>
+<td align="right">0.0026</td>
+<td align="right">0.9974</td>
 <td align="right">20</td>
-<td align="right">0.9492687</td>
+<td align="right">0.95</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
@@ -163,10 +163,10 @@ img {
 <td align="right">13082</td>
 <td align="right">1833</td>
 <td align="right">16</td>
-<td align="right">0.0024469</td>
-<td align="right">0.9975531</td>
+<td align="right">0.0024</td>
+<td align="right">0.9976</td>
 <td align="right">20</td>
-<td align="right">0.9521839</td>
+<td align="right">0.95</td>
 </tr>
 <tr class="odd">
 <td align="right">3</td>
@@ -176,10 +176,10 @@ img {
 <td align="right">6541</td>
 <td align="right">437</td>
 <td align="right">66</td>
-<td align="right">0.0100933</td>
-<td align="right">0.9899067</td>
+<td align="right">0.0101</td>
+<td align="right">0.9899</td>
 <td align="right">20</td>
-<td align="right">0.8163669</td>
+<td align="right">0.82</td>
 </tr>
 <tr class="even">
 <td align="right">4</td>
@@ -189,10 +189,10 @@ img {
 <td align="right">3270</td>
 <td align="right">140</td>
 <td align="right">169</td>
-<td align="right">0.0258449</td>
-<td align="right">0.9741551</td>
+<td align="right">0.0258</td>
+<td align="right">0.9742</td>
 <td align="right">18</td>
-<td align="right">0.5923275</td>
+<td align="right">0.59</td>
 </tr>
 <tr class="odd">
 <td align="right">5</td>
@@ -202,10 +202,10 @@ img {
 <td align="right">6541</td>
 <td align="right">103</td>
 <td align="right">276</td>
-<td align="right">0.0422083</td>
-<td align="right">0.9577917</td>
+<td align="right">0.0422</td>
+<td align="right">0.9578</td>
 <td align="right">19</td>
-<td align="right">0.4221060</td>
+<td align="right">0.42</td>
 </tr>
 <tr class="even">
 <td align="right">6</td>
@@ -215,10 +215,10 @@ img {
 <td align="right">13082</td>
 <td align="right">199</td>
 <td align="right">236</td>
-<td align="right">0.0360911</td>
-<td align="right">0.9639089</td>
+<td align="right">0.0361</td>
+<td align="right">0.9639</td>
 <td align="right">20</td>
-<td align="right">0.4794236</td>
+<td align="right">0.48</td>
 </tr>
 </tbody>
 </table>
@@ -888,10 +888,10 @@ Replacement&lt;-c('boost/25',rep('cv/10',5))
 Records&lt;-c(rep(dim(training1)[1],2),dim(training3)[1],dim(training4)[1],dim(training3)[1],dim(training1)[1])
 Time&lt;-c(5122,1833,437,140,103,199)
 Errors&lt;-c(calculatValidationErrors(cf1),calculatValidationErrors(cf2),calculatValidationErrors(cf3),calculatValidationErrors(cf4),calculatValidationErrors(cf5),calculatValidationErrors(cf6))
-OOSE&lt;-c(1-cf1$overall[1],1-cf2$overall[1],1-cf3$overall[1],1-cf4$overall[1],1-cf5$overall[1],1-cf6$overall[1])
-Accuracy&lt;-c(cf1$overall[1],cf2$overall[1],cf3$overall[1],cf4$overall[1],cf5$overall[1],cf6$overall[1])
+OOSE&lt;-c(round(1-cf1$overall[1],4),round(1-cf2$overall[1],4),round(1-cf3$overall[1],4),round(1-cf4$overall[1],4),round(1-cf5$overall[1],4),round(1-cf6$overall[1],4))
+Accuracy&lt;-c(round(cf1$overall[1],4),round(cf2$overall[1],4),round(cf3$overall[1],4),round(cf4$overall[1],4),round(cf5$overall[1],4),round(cf6$overall[1],4))
 Test&lt;-c(sum(mod1result),20,sum(mod3result),sum(mod4result),sum(mod5result),sum(mod6result))
-Probability&lt;-c(cf1$overall[1]^20,cf2$overall[1]^20,cf3$overall[1]^20,cf4$overall[1]^20,cf5$overall[1]^20,cf6$overall[1]^20)
+Probability&lt;-c(round(cf1$overall[1]^20,2),round(cf2$overall[1]^20,2),round(cf3$overall[1]^20,2),round(cf4$overall[1]^20,2),round(cf5$overall[1]^20,2),round(cf6$overall[1]^20,2))
 results&lt;-data.frame(Model,Training,Replacement,Records,Time,Errors,OOSE,Accuracy,Test,Probability)
 write.csv(results,&quot;Results.csv&quot;)
 

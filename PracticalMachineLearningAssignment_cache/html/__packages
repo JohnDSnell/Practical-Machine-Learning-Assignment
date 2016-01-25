@@ -1,0 +1,12 @@
+base
+lattice
+plyr
+Rmisc
+ggplot2
+dplyr
+YaleToolkit
+caret
+foreach
+iterators
+doParallel
+knitr

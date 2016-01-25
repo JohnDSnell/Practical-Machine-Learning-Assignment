@@ -4,9 +4,9 @@ title: An investigation into the modelling required to predict quality of exerci
 author: "John Snell"
 date: "19 January 2016"
 output:
-  word_document: default
   html_document:
     fig_caption: yes
+  word_document: default
 bibliography: assignmentbiblio.bib
 ---
 ```{r load libraries, cache=FALSE, echo=FALSE, message = FALSE, warning=FALSE}
@@ -337,10 +337,10 @@ Replacement<-c('boost/25',rep('cv/10',5))
 Records<-c(rep(dim(training1)[1],2),dim(training3)[1],dim(training4)[1],dim(training3)[1],dim(training1)[1])
 Time<-c(5122,1833,437,140,103,199)
 Errors<-c(calculatValidationErrors(cf1),calculatValidationErrors(cf2),calculatValidationErrors(cf3),calculatValidationErrors(cf4),calculatValidationErrors(cf5),calculatValidationErrors(cf6))
-OOSE<-c(1-cf1$overall[1],1-cf2$overall[1],1-cf3$overall[1],1-cf4$overall[1],1-cf5$overall[1],1-cf6$overall[1])
-Accuracy<-c(cf1$overall[1],cf2$overall[1],cf3$overall[1],cf4$overall[1],cf5$overall[1],cf6$overall[1])
+OOSE<-c(round(1-cf1$overall[1],4),round(1-cf2$overall[1],4),round(1-cf3$overall[1],4),round(1-cf4$overall[1],4),round(1-cf5$overall[1],4),round(1-cf6$overall[1],4))
+Accuracy<-c(round(cf1$overall[1],4),round(cf2$overall[1],4),round(cf3$overall[1],4),round(cf4$overall[1],4),round(cf5$overall[1],4),round(cf6$overall[1],4))
 Test<-c(sum(mod1result),20,sum(mod3result),sum(mod4result),sum(mod5result),sum(mod6result))
-Probability<-c(cf1$overall[1]^20,cf2$overall[1]^20,cf3$overall[1]^20,cf4$overall[1]^20,cf5$overall[1]^20,cf6$overall[1]^20)
+Probability<-c(round(cf1$overall[1]^20,2),round(cf2$overall[1]^20,2),round(cf3$overall[1]^20,2),round(cf4$overall[1]^20,2),round(cf5$overall[1]^20,2),round(cf6$overall[1]^20,2))
 results<-data.frame(Model,Training,Replacement,Records,Time,Errors,OOSE,Accuracy,Test,Probability)
 write.csv(results,"Results.csv")
 
